@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        // 原始資料 : 戲劇資料
+        const plays = {
+            hamlet: {
+                name: "Hamlet",
+                type: "tragedy", // 悲劇
+            },
+            "as-like": {
+                name: "As You Like It",
+                type: "comedy", // 喜劇
+            },
+            othello: {
+                name: "Othello",
+                type: "tragedy",
+            },
+        };
+        // 原始資料 : 發票資料
+        const invoices = [{
+            customer: "BigCo",
+            performances: [{
+                    playID: "hamlet",
+                    audience: 55,
+                },
+                {
+                    playID: "as-like",
+                    audience: 35,
+                },
+                {
+                    playID: "othello",
+                    audience: 40,
+                },
+            ],
+        }, ];
+
+        function getPlay(perf) {
+            return plays[perf.playID]
+        }
+
+        function amountFor(perf) {
+            let result = 0;
+
+            switch (getPlay(perf).type) {
+                case "tragedy":
+                    result = 40000;
+                    if (perf.audience > 30) {
+                        result += 1000 * (perf.audience - 30);
+                    }
+                    break;
+                case "comedy":
+                    result = 30000;
+                    if (perf.audience > 20) {
+                        result += 10000 + 500 * (perf.audience - 20);
+                    }
+                    result += 300 * perf.audience;
+                    break;
+                default:
+                    throw new Error(`unknow type: ${getPlay(perf).type}`);
+            }
+            return result;
+        }
+        // 印出帳單 : 根據觀眾的規模以及戲劇的類型向顧客收費
+        function statement(invoice, plays) {
+            let totalAmount = 0;
+            let volumeCredits = 0; //批量積點 : 可享受折扣
+            let result = `Statement for ${invoice.customer}\n`;
+            const format = new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+            }).format;
+            for (let perf of invoice.performances) {
+                // 加入 volume credit
+                volumeCredits += Math.max(perf.audience - 30, 0);
+                // 每十名喜劇觀眾可獲得額外點數
+                if ("comedy" === getPlay(perf).type) volumeCredits += Math.floor(perf.audience / 5);
+
+                // 印出這筆訂單
+                result += ` ${getPlay(perf).name}: ${format(amountFor(perf) / 100)} (${perf.audience} seats)\n`;
+                totalAmount += amountFor(perf);
+            }
+            result += `Amount owed is ${format(totalAmount / 100)}\n`;
+            result += `You earned ${volumeCredits} credits\n`;
+            return result;
+        }
+        console.log(statement(invoices[0], plays));
+    </script>
+</body>
+
+</html>
